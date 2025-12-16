@@ -1,0 +1,31 @@
+{
+  "name": "com.luzzi.plantbuilder",
+  "displayName": "Plant Builder",
+  "version": "0.1.0",
+  "unity": "2022.3",
+ "description": "Procedural plant generation system for The Pond project, including runtime scripts, shaders, and sprite atlases. Originally developed by Augustin Grassien and maintained and extended by Luzzi. ",
+  "keywords": [
+    "plant",
+    "builder",
+    "procedural",
+    "runtime",
+    "tools"
+  ],
+  "author": {
+  "name": "Luzzi",
+},
+"contributors": [
+  {
+    "name": "Augustin Grassien"
+  }
+],
+  "license": "Proprietary",
+  "dependencies": {},
+  "samples": [
+    {
+      "displayName": "Basic PlantBuilder Sample",
+      "description": "A simple scene demonstrating the PlantBuilder runtime.",
+      "path": "Samples~/PlantBuilder_Exemples"
+    }
+  ]
+}
