@@ -3,7 +3,7 @@
   "displayName": "Plant Builder",
   "version": "0.1.0",
   "unity": "2022.3",
- "description": "Procedural plant generation system for The Pond project, including runtime scripts, shaders, and sprite atlases. Originally developed by Augustin Grassien and maintained and extended by Luzzi. ",
+ "description": "Procedural plant generation system for The Pond project, including runtime scripts, shaders, and sprite atlases. Originally developed by Augustin Grassien. ",
   "keywords": [
     "plant",
     "builder",
