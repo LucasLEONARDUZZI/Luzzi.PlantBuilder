@@ -1,7 +1,9 @@
 using System;
 using UnityEngine;
 
-namespace Luzzi.PlantBuilder{
+namespace Luzzi.PlantSystem
+{
+
 [Serializable]
 public struct HelixSettings
 {

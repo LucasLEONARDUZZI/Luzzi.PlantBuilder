@@ -38,31 +38,31 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: bc821af266ab60349a9deb037e8dc9ff, type: 3}
       propertyPath: m_LocalRotation.w
-      value: 0.012159225
+      value: 0.3308034
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: bc821af266ab60349a9deb037e8dc9ff, type: 3}
       propertyPath: m_LocalRotation.x
-      value: -0.6966669
+      value: -0.6574934
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: bc821af266ab60349a9deb037e8dc9ff, type: 3}
       propertyPath: m_LocalRotation.y
-      value: -0.7172917
+      value: -0.67695755
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: bc821af266ab60349a9deb037e8dc9ff, type: 3}
       propertyPath: m_LocalRotation.z
-      value: 0.00000029988587
+      value: 0.0000000819564
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: bc821af266ab60349a9deb037e8dc9ff, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
-      value: -0.971
+      value: -25.785
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: bc821af266ab60349a9deb037e8dc9ff, type: 3}
       propertyPath: m_LocalEulerAnglesHint.y
-      value: -179
+      value: -150.171
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: bc821af266ab60349a9deb037e8dc9ff, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
-      value: 88.32
+      value: 81.351
       objectReference: {fileID: 0}
     - target: {fileID: -5754084199372789682, guid: bc821af266ab60349a9deb037e8dc9ff, type: 3}
       propertyPath: m_Mesh
@@ -245,15 +245,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: bc821af266ab60349a9deb037e8dc9ff, type: 3}
       propertyPath: m_LocalScale.x
-      value: 0.2
+      value: 0.3
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: bc821af266ab60349a9deb037e8dc9ff, type: 3}
       propertyPath: m_LocalScale.y
-      value: 0.2
+      value: 0.3
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: bc821af266ab60349a9deb037e8dc9ff, type: 3}
       propertyPath: m_LocalScale.z
-      value: 0.2
+      value: 0.3
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: bc821af266ab60349a9deb037e8dc9ff, type: 3}
       propertyPath: m_LocalPosition.x
@@ -485,11 +485,15 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 1423269383957254018, guid: 93322b6c4a82ec24eb714a3e33f18ef9, type: 3}
       propertyPath: _saveDirectory
-      value: Assets/Meshes/PlantBuilder/Composed/
+      value: Assets/OnGoingPackage/Samples/PlantBuilder_Exemples/Meshes/Composed
       objectReference: {fileID: 0}
     - target: {fileID: 5380211069865001462, guid: 93322b6c4a82ec24eb714a3e33f18ef9, type: 3}
       propertyPath: _autoRefreshRate
       value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 5380211069865001462, guid: 93322b6c4a82ec24eb714a3e33f18ef9, type: 3}
+      propertyPath: _lifeCycleFactor
+      value: 0.043
       objectReference: {fileID: 0}
     - target: {fileID: 5380211069865001462, guid: 93322b6c4a82ec24eb714a3e33f18ef9, type: 3}
       propertyPath: _lifeCycleSpeedFactor
@@ -539,10 +543,14 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 8055217813937469665, guid: 93322b6c4a82ec24eb714a3e33f18ef9, type: 3}
+      propertyPath: m_Materials.Array.data[0]
+      value: 
+      objectReference: {fileID: 2100000, guid: 2451ca02d7e1f244fada57be09f92867, type: 2}
     - target: {fileID: 8778017341726233873, guid: 93322b6c4a82ec24eb714a3e33f18ef9, type: 3}
       propertyPath: m_Mesh
       value: 
-      objectReference: {fileID: 4300000, guid: 2f31d0620faec164097c1fd185b47b97, type: 2}
+      objectReference: {fileID: 4300000, guid: 7f8b8b3e0ec1deb4bafd160020286ed8, type: 2}
     - target: {fileID: 8906733163015986833, guid: 93322b6c4a82ec24eb714a3e33f18ef9, type: 3}
       propertyPath: m_Name
       value: Example_LilyPad
@@ -1150,15 +1158,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: bc821af266ab60349a9deb037e8dc9ff, type: 3}
       propertyPath: m_LocalScale.x
-      value: 0.2
+      value: 0.3
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: bc821af266ab60349a9deb037e8dc9ff, type: 3}
       propertyPath: m_LocalScale.y
-      value: 0.2
+      value: 0.3
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: bc821af266ab60349a9deb037e8dc9ff, type: 3}
       propertyPath: m_LocalScale.z
-      value: 0.2
+      value: 0.3
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: bc821af266ab60349a9deb037e8dc9ff, type: 3}
       propertyPath: m_LocalPosition.x

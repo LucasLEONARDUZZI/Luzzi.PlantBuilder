@@ -20,6 +20,7 @@ plug-and-play solution.
 ## Authors & Credits
 
 - **Original development**: Augustin Grassien
+- **Integration & maintenance**: Lucas Leonarduzzi (Luzzi)
 
 ---
 

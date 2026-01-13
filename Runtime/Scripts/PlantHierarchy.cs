@@ -1,7 +1,8 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace Luzzi.PlantBuilder{
+namespace Luzzi.PlantSystem
+{
 [ExecuteInEditMode]
 public abstract class PlantHierarchy : MonoBehaviour
 {

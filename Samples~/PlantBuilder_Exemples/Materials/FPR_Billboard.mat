@@ -1,0 +1,73 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!21 &2100000
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: FPR_Billboard
+  m_Shader: {fileID: 4800000, guid: 61e1be98eb880df4497819cc1cdbd20f, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords: []
+  m_InvalidKeywords:
+  - _BILLBOARD_ON
+  - _PERPIVOTLIFECYCLE_ON
+  - _USECAMERADIRECTION_ON
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _AtlasMap:
+        m_Texture: {fileID: 2800000, guid: 24ddf8f9fec15c64d9067472ec18153c, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _AtlasTexture:
+        m_Texture: {fileID: 2800000, guid: 24ddf8f9fec15c64d9067472ec18153c, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _ReflectionNoiseMap:
+        m_Texture: {fileID: 2800000, guid: d785047514ae70a4e86c4e4bf06b920c, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Ints: []
+    m_Floats:
+    - _Billboard: 1
+    - _Cutoff: 0.5
+    - _CycleDuration: 300
+    - _DebugMode: 0
+    - _Flatten: 0
+    - _GrowthProgressionRange: 0.5
+    - _Luminosity: 0.5
+    - _PerPivotLifeCycle: 1
+    - _PlaneHeight: 0
+    - _PlaneSize: 5
+    - _ProgressionRange: 0.5
+    - _ReflectionDeformAmp: 0.1
+    - _ReflectionDeformFreq: 8
+    - _ReflectionTimeFactor: 0.05
+    - _RelfctionDeformAmp: 0.1
+    - _Saturation: 0.5
+    - _TimeSpeed: 1
+    - _UseCameraDirection: 1
+    - _WaterHeight: 0
+    - _WaterWavingLocalRange: 5
+    - _WaterWavingStrength: 1
+    - _WindAmplitude: 0.1
+    - _WindFrequency: 1
+    - _WindLocalRange: 5
+    - _WindSpeedFactor: 1
+    m_Colors:
+    - _BaseColor: {r: 0.8490566, g: 0.81547934, b: 0.50863296, a: 1}
+    - _DebugColor: {r: 1, g: 0, b: 1, a: 1}
+    - _ReflectionColor: {r: 0.5566038, g: 0.5088199, b: 0.31768423, a: 0.5}
+    - _WindDirection: {r: 1, g: 1, b: 0, a: 1}
+  m_BuildTextureStacks: []

@@ -1,10 +1,23 @@
 using UnityEditor;
 using UnityEngine;
-namespace Luzzi.PlantBuilder{
+
+namespace Luzzi.PlantSystem
+{
 [ExecuteInEditMode, RequireComponent(typeof(MeshFilter))]
 public class PlantNode : PlantHierarchy
 {
+    /// <summary>
+    /// UV channel used for world position coordinates (required by shader)
+    /// </summary>
+    private const int UV_WORLD_POSITION_CHANNEL = 3;
+    
     private bool _canBeModified;
+    public bool CanBeModified => _canBeModified;
+    
+    /// <summary>
+    /// Returns true if modifiers are actually applied and working (not just enabled)
+    /// </summary>
+    public bool HasModifiersApplied => _canBeModified && _modifier != null && _modifiedMesh != null && _baseMesh != null;
 
     [SerializeField]
     private bool _useRadialGrowth = true;
@@ -46,7 +59,7 @@ public class PlantNode : PlantHierarchy
             if (Application.isEditor)
             {
                 self.UpdateModifier();
-                self.GenerateUV_LocalXY(3);
+                self.GenerateWorldPositionUVs();
             }
         };
     }
@@ -247,6 +260,20 @@ public class PlantNode : PlantHierarchy
         EditorUtility.SetDirty(_modifiedMesh);
     }
 
+    /// <summary>
+    /// Generates UV3 coordinates based on world position for shader rendering.
+    /// Sets UV3.xy to the node's world position (X,Z) for all vertices.
+    /// Essential for shader functionality - called synchronously during merge.
+    /// </summary>
+    public void GenerateWorldPositionUVs()
+    {
+        GenerateUV_LocalXY(UV_WORLD_POSITION_CHANNEL);
+    }
+    
+    /// <summary>
+    /// Internal method that generates UV coordinates for a specific channel based on world position.
+    /// Sets UV.xy to the node's world position (X,Z) for all vertices.
+    /// </summary>
     private void GenerateUV_LocalXY(int channel)
     {
         if (_modifiedMesh == null || _modifier == null) return;
