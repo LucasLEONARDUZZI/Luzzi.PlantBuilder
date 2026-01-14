@@ -15,7 +15,6 @@ public static class MeshSaver
     
     public static void SaveMesh(Mesh mesh, string path, GameObject prefabContext)
     {
-        Debug.Log("[MeshSaver] Saving mesh asset...");
 #if UNITY_EDITOR
         // S'assurer que le dossier existe
         string directory = System.IO.Path.GetDirectoryName(path);
@@ -44,6 +43,12 @@ public static class MeshSaver
         AssetDatabase.CreateAsset(mesh, path);
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh();
+            Mesh savedMesh = AssetDatabase.LoadAssetAtPath<Mesh>(path);
+if (savedMesh != null)
+{
+    Debug.Log($"MeshSaver: Mesh saved at {path}");
+    EditorGUIUtility.PingObject(savedMesh);
+}
 #endif
     }
     

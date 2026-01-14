@@ -166,24 +166,19 @@ namespace Luzzi.PlantSystem
         
         public void SaveMesh(bool wasExistingMesh)
         {
-            Debug.Log("MeshCombiner: Saving combined mesh asset...");
-#if UNITY_EDITOR
-Debug.Log("MeshCombiner: Editor mode detected, proceeding with asset saving...");
+            #if UNITY_EDITOR
             if (_meshFilter == null){
-                Debug.LogWarning("MeshCombiner: No MeshFilter found, cannot save mesh.");
                 return;
             }
             Mesh mesh = _meshFilter.sharedMesh;
 
             if (mesh == null){
-                Debug.LogWarning("MeshCombiner: No mesh to save.");
                 return;
             }
 
             var prefabStage = PrefabStageUtility.GetCurrentPrefabStage();
             string assetPath = null;
             GameObject prefabAsset = null;
-            Debug.Log("MeshCombiner: Determining prefab asset path...");
 
             if (prefabStage != null)
             {
@@ -211,7 +206,6 @@ Debug.Log("MeshCombiner: Editor mode detected, proceeding with asset saving...")
             mesh.name = $"{prefabAsset.name}_combinedMesh_{prefabShortGuid}";
             string path = $"{_saveDirectory}{mesh.name}.asset";
 
-            // Appel direct à MeshSaver (plus sûr et maintenable)
             MeshSaver.SaveMesh(mesh, path);
 #else
             // Runtime: Just keep the mesh in memory without saving to asset
