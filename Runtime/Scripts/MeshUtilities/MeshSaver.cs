@@ -3,7 +3,7 @@ using UnityEditor;
 #endif
 using UnityEngine;
 
-namespace Luzzi.PlantSystem.Editor
+namespace Luzzi.PlantSystem
 {
 
 public static class MeshSaver

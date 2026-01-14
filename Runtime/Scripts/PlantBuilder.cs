@@ -4,7 +4,8 @@ using UnityEngine;
 using UnityEditor;
 #endif
 
-namespace Luzzi.PlantSystem{
+namespace Luzzi.PlantSystem
+{
 
 [ExecuteInEditMode, RequireComponent(typeof(MeshCombiner))]
 public class PlantBuilder : PlantHierarchy
