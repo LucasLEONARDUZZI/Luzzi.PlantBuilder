@@ -16,7 +16,7 @@ namespace Luzzi.PlantSystem
         public bool isCombined => _isCombined;
         GameObject[] _combineObjects;
         [SerializeField]
-        private string _saveDirectory = "Assets/Tools/PlantBuilder/Meshes/";
+        private string _saveDirectory = "Assets/Meshes/";
 
         public void Combine(Dictionary<GameObject, Mesh> objectsMeshes)
         {

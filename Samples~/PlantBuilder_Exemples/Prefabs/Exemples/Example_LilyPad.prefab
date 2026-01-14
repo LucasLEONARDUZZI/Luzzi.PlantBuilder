@@ -485,7 +485,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 1423269383957254018, guid: 93322b6c4a82ec24eb714a3e33f18ef9, type: 3}
       propertyPath: _saveDirectory
-      value: Assets/OnGoingPackage/Samples/PlantBuilder_Exemples/Meshes/Composed
+      value: Assets/Meshes/
       objectReference: {fileID: 0}
     - target: {fileID: 5380211069865001462, guid: 93322b6c4a82ec24eb714a3e33f18ef9, type: 3}
       propertyPath: _autoRefreshRate
