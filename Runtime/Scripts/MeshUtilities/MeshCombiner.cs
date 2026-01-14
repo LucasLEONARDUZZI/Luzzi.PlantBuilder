@@ -166,15 +166,24 @@ namespace Luzzi.PlantSystem
         
         public void SaveMesh(bool wasExistingMesh)
         {
+            Debug.Log("MeshCombiner: Saving combined mesh asset...");
 #if UNITY_EDITOR
-            if (_meshFilter == null) return;
+Debug.Log("MeshCombiner: Editor mode detected, proceeding with asset saving...");
+            if (_meshFilter == null){
+                Debug.LogWarning("MeshCombiner: No MeshFilter found, cannot save mesh.");
+                return;
+            }
             Mesh mesh = _meshFilter.sharedMesh;
 
-            if (mesh == null) return;
+            if (mesh == null){
+                Debug.LogWarning("MeshCombiner: No mesh to save.");
+                return;
+            }
 
             var prefabStage = PrefabStageUtility.GetCurrentPrefabStage();
             string assetPath = null;
             GameObject prefabAsset = null;
+            Debug.Log("MeshCombiner: Determining prefab asset path...");
 
             if (prefabStage != null)
             {
@@ -202,59 +211,8 @@ namespace Luzzi.PlantSystem
             mesh.name = $"{prefabAsset.name}_combinedMesh_{prefabShortGuid}";
             string path = $"{_saveDirectory}{mesh.name}.asset";
 
-            // Use MeshSaver if available, otherwise skip saving in runtime
-            var meshSaverType = System.Type.GetType("Luzzi.PlantSystem.Editor.MeshSaver");
-            if (meshSaverType != null)
-            {
-                var saveMethod = meshSaverType.GetMethod("SaveMesh", new System.Type[] { typeof(Mesh), typeof(string), typeof(GameObject) });
-                if (saveMethod != null)
-                {
-                    saveMethod.Invoke(null, new object[] { mesh, path, gameObject });
-                }
-            }
-            
-            // Réassigner le mesh sauvé au MeshFilter pour éviter les références perdues
-            Mesh savedMesh = AssetDatabase.LoadAssetAtPath<Mesh>(path);
-            if (savedMesh != null && _meshFilter != null)
-            {            
-                _meshFilter.sharedMesh = savedMesh;
-                
-                // CRITICAL: Pour les nouveaux assets, forcer la persistence
-                if (prefabStage != null)
-                {
-                    if (!wasExistingMesh)
-                    {
-                        // NOUVEAU MESH : Forcer la sauvegarde immédiate du prefab
-                        Debug.Log($"MeshCombiner: NEW MESH detected, forcing prefab save");
-                        EditorUtility.SetDirty(_meshFilter);
-                        EditorUtility.SetDirty(gameObject);
-                        
-                        // Pour les prefab stages, utiliser l'API spécifique
-                        try 
-                        {
-                            // Sauvegarder le prefab avec les nouvelles références
-                            PrefabUtility.SaveAsPrefabAsset(prefabStage.prefabContentsRoot, prefabStage.assetPath);
-                            Debug.Log($"MeshCombiner: Saved prefab asset with new mesh reference");
-                        }
-                        catch (System.Exception e)
-                        {
-                            Debug.LogWarning($"MeshCombiner: Could not save prefab asset: {e.Message}");
-                            // Fallback simple
-                            EditorSceneManager.MarkSceneDirty(prefabStage.scene);
-                        }
-                    }
-                    else
-                    {
-                        // MESH EXISTANT : Marquer comme dirty suffit
-                        EditorUtility.SetDirty(gameObject);
-                    }
-                }
-            }
-            else
-            {
-                // Fallback pour objets hors prefab
-                EditorUtility.SetDirty(gameObject);
-            }
+            // Appel direct à MeshSaver (plus sûr et maintenable)
+            MeshSaver.SaveMesh(mesh, path);
 #else
             // Runtime: Just keep the mesh in memory without saving to asset
             if (_meshFilter != null && _meshFilter.sharedMesh != null)

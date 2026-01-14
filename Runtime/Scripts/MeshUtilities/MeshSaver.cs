@@ -15,6 +15,7 @@ public static class MeshSaver
     
     public static void SaveMesh(Mesh mesh, string path, GameObject prefabContext)
     {
+        Debug.Log("[MeshSaver] Saving mesh asset...");
 #if UNITY_EDITOR
         // S'assurer que le dossier existe
         string directory = System.IO.Path.GetDirectoryName(path);
