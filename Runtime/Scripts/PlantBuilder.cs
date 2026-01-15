@@ -65,6 +65,7 @@ public class PlantBuilder : PlantHierarchy
         _editMode = enable;
         if (enable)
         {
+            Debug.Log("[PlantBuilder] Entering Edit Mode: Uncombining meshes for individual node editing.");
             // DETECTION: Sauvegarder le nom du mesh asset AVANT de l'enlever
             var meshFilter = _combiner.GetComponent<MeshFilter>();
             if (meshFilter?.sharedMesh != null)
@@ -81,6 +82,7 @@ public class PlantBuilder : PlantHierarchy
         }
         else
         {            
+            Debug.Log("[PlantBuilder] Exiting Edit Mode: Combining meshes and applying modifiers.");
             // CRITICAL FIX: Force synchronous node update to ensure UV3 generation before combining
             // This fixes the missing UV3 channel bug on first merge after prefab opening
             UpdateHierarchy(this, _helixModifier);
@@ -247,7 +249,8 @@ public class PlantBuilder : PlantHierarchy
         /// </summary>
         public void NormalizePrefabTransform()
         {
-            ApplyPositionToPlantNodes();
+            Debug.Log("[NormalizePrefabTransform] Normalizing prefab transform...");
+            //ApplyPositionToPlantNodes();
             ApplyScaleToPlantNodes();
         }
 
@@ -309,21 +312,37 @@ public class PlantBuilder : PlantHierarchy
         /// </summary>
         public void ApplyScaleToPlantNodes()
         {
+            Debug.Log($"[ApplyScaleToPlantNodes] Applying parent scale to child PlantNodes [{transform.childCount}]...");
             Transform parent = transform;
             Vector3 parentScale = parent.localScale;
-            if (parentScale == Vector3.one)
+            if (parentScale == Vector3.one && parent.position == Vector3.zero)
+            {
+                Debug.Log("[ApplyScaleToPlantNodes] Parent is (0,0,0) position and (1,1,1) scale. No action needed.");
                 return;
+            }
             for (int i = 0; i < parent.childCount; i++)
             {
                 Transform child = parent.GetChild(i);
+                Vector3 beforeLocal = child.localPosition;
+                Vector3 beforeWorld = child.position;
+                Debug.Log($"[Normalize] Avant: Child '{child.name}' local={beforeLocal} world={beforeWorld} scale={child.localScale}");
+                // Appliquer le scale du parent à la position locale de l'enfant
+                child.localPosition = Vector3.Scale(child.localPosition, parentScale)+parent.position;
+              
                 Vector3 childScale = child.localScale;
                 child.localScale = new Vector3(
                     childScale.x * parentScale.x,
                     childScale.y * parentScale.y,
                     childScale.z * parentScale.z
                 );
+                Vector3 afterLocal = child.localPosition;
+                Vector3 afterWorld = child.position;
+                Debug.Log($"[Normalize] Après: Child '{child.name}' local={afterLocal} world={afterWorld} scale={child.localScale}");
             }
+            Debug.Log($"[Normalize] Parent before reset: position={parent.position} scale={parent.localScale}");
+            parent.position = Vector3.zero; // Reset parent position to avoid double transform
             parent.localScale = Vector3.one;
+            Debug.Log($"[Normalize] Parent after reset: position={parent.position} scale={parent.localScale}");
         }
 
 #if UNITY_EDITOR
