@@ -155,21 +155,16 @@ public class PlantBuilderEditor : UnityEditor.Editor
                         "Merge",
                         "Cancel");
                     if (!align) return;
-                    Undo.RecordObject(builder.transform, "Set PlantNodes Y to 0");
-                    builder.SetChildrenLocalYToZero();
-                    EditorUtility.SetDirty(builder);
                 }
                 // Si les modifiers sont désactivés
                 if (!modifiersOk)
                 {
                     bool enableMods = EditorUtility.DisplayDialog(
-                        "Modifiers are disabled",
-                        "Modifiers are currently disabled.\nThey will be enabled before merging.\nDo you want to continue?",
-                        "Enable and Merge",
+                        "Modifiers disabled",
+                        "Modifiers are disabled.\nDo you want to continue?",
+                        "Merge without modifiers",
                         "Cancel");
                     if (!enableMods) return;
-                    builder.SetApplyModifiers(true);
-                    EditorUtility.SetDirty(builder);
                 }
             }
             builder.SetEditMode(nextEditMode);
