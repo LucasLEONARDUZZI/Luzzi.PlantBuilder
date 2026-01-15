@@ -65,7 +65,6 @@ public class PlantBuilder : PlantHierarchy
         _editMode = enable;
         if (enable)
         {
-            Debug.Log("[PlantBuilder] Entering Edit Mode: Uncombining meshes for individual node editing.");
             // DETECTION: Sauvegarder le nom du mesh asset AVANT de l'enlever
             var meshFilter = _combiner.GetComponent<MeshFilter>();
             if (meshFilter?.sharedMesh != null)
@@ -82,7 +81,6 @@ public class PlantBuilder : PlantHierarchy
         }
         else
         {            
-            Debug.Log("[PlantBuilder] Exiting Edit Mode: Combining meshes and applying modifiers.");
             // CRITICAL FIX: Force synchronous node update to ensure UV3 generation before combining
             // This fixes the missing UV3 channel bug on first merge after prefab opening
             UpdateHierarchy(this, _helixModifier);
@@ -235,130 +233,112 @@ public class PlantBuilder : PlantHierarchy
         return objectsMeshes;
     }
 
-        /// <summary>
-        /// Retourne true si le prefab a une position locale nulle et un scale unitaire.
-        /// </summary>
-        public bool IsPrefabTransformNormalized()
+#region PrefabTransformNormalization
+    /// <summary>
+    /// Retourne true si le prefab a une position locale nulle et un scale unitaire.
+    /// </summary>
+    public bool IsPrefabTransformNormalized()
+    {
+        Transform parent = transform;
+        return parent.localPosition == Vector3.zero && parent.localScale == Vector3.one;
+    }
+        
+    /// <summary>
+    /// Applique la normalisation aux PlantNodes.
+    /// </summary>
+    public void NormalizePrefabTransform()
+    {
+        Transform parent = transform;
+        Vector3 parentScale = parent.localScale;
+        Vector3 parentPosition = parent.localPosition;
+        for (int i = 0; i < parent.childCount; i++)
         {
-            Transform parent = transform;
-            return parent.localPosition == Vector3.zero && parent.localScale == Vector3.one;
+            Transform child = parent.GetChild(i);
+            ApplyScaleToPlantNode(child, parentScale);// Adjuste la position locale en fonction du scale parent
+            ApplyPositionToPlantNode(child, parentPosition);//doit intervenir après le scale pour ajuster l'offset correctement
         }
-         
-        /// <summary>
-        /// Applique la normalisation aux PlantNodes.
-        /// </summary>
-        public void NormalizePrefabTransform()
-        {
-            Debug.Log("[NormalizePrefabTransform] Normalizing prefab transform...");
-            //ApplyPositionToPlantNodes();
-            ApplyScaleToPlantNodes();
-        }
+        parent.localScale = Vector3.one;
+        parent.localPosition = Vector3.zero;
+    }
 
-         /// <summary>
-        /// Vérifie que tous les enfants directs du prefab ont une position locale Y à zéro.
-        /// Retourne true si tous les enfants sont OK, false sinon.
-        /// </summary>
-        public bool AreChildrenLocalYZero()
-        {
-            Transform parent = transform;
-            for (int i = 0; i < parent.childCount; i++)
-            {
-                Transform child = parent.GetChild(i);
-                if (Mathf.Abs(child.localPosition.y) > 1e-4f)
-                {
-                    return false;
-                }
-            }
-            return true;
-        }
+    /// <summary>
+    /// Applique la position du parent au PlantNode enfant.
+    /// </summary>
+    private void ApplyPositionToPlantNode(Transform child, Vector3 parentPosition)
+    {
+        child.localPosition += parentPosition;
+    }
 
-          /// <summary>
-        /// Remet la position locale Y de tous les enfants directs à zéro.
-        /// </summary>
-        public void SetChildrenLocalYToZero()
-        {
-            Transform parent = transform;
-            for (int i = 0; i < parent.childCount; i++)
-            {
-                Transform child = parent.GetChild(i);
-                Vector3 pos = child.localPosition;
-                if (Mathf.Abs(pos.y) > 1e-4f)
-                {
-                    pos.y = 0f;
-                    child.localPosition = pos;
-                }
-            }
-        }
+    /// <summary>
+    /// Applique le scale du parent au PlantNode enfant.
+    /// </summary>
+    private void ApplyScaleToPlantNode(Transform child, Vector3 parentScale)
+    {
+        child.localPosition = Vector3.Scale(child.localPosition, parentScale);
+        child.localScale = Vector3.Scale(child.localScale, parentScale);
+    }
+    #endregion
 
-        /// <summary>
-        /// Applique la position locale du parent à tous les enfants directs puis remet le parent à zéro.
-        /// </summary>
-        public void ApplyPositionToPlantNodes()
+#region ChildrenLocalYZero
+    /// <summary>
+    /// Vérifie que tous les enfants directs du prefab ont une position locale Y à zéro.
+    /// Retourne true si tous les enfants sont OK, false sinon.
+    /// </summary>
+    public bool AreChildrenLocalYZero()
+    {
+        Transform parent = transform;
+        for (int i = 0; i < parent.childCount; i++)
         {
-            Transform parent = transform;
-            Vector3 parentPosition = parent.localPosition;
-            if (parentPosition == Vector3.zero)
-                return;
-            for (int i = 0; i < parent.childCount; i++)
+            Transform child = parent.GetChild(i);
+            if (Mathf.Abs(child.localPosition.y) > 1e-4f)
             {
-                Transform child = parent.GetChild(i);
-                child.localPosition += parentPosition;
+                return false;
             }
-            parent.localPosition = Vector3.zero;
         }
+        return true;
+    }
 
         /// <summary>
-        /// Applique le scale local du parent à tous les enfants directs puis remet le parent à 1.
-        /// </summary>
-        public void ApplyScaleToPlantNodes()
+    /// Remet la position locale Y de tous les enfants directs à zéro.
+    /// </summary>
+    public void SetChildrenLocalYToZero()
+    {
+        Transform parent = transform;
+        for (int i = 0; i < parent.childCount; i++)
         {
-            Debug.Log($"[ApplyScaleToPlantNodes] Applying parent scale to child PlantNodes [{transform.childCount}]...");
-            Transform parent = transform;
-            Vector3 parentScale = parent.localScale;
-            if (parentScale == Vector3.one && parent.position == Vector3.zero)
+            Transform child = parent.GetChild(i);
+            Vector3 pos = child.localPosition;
+            if (Mathf.Abs(pos.y) > 1e-4f)
             {
-                Debug.Log("[ApplyScaleToPlantNodes] Parent is (0,0,0) position and (1,1,1) scale. No action needed.");
-                return;
+                pos.y = 0f;
+                child.localPosition = pos;
             }
-            for (int i = 0; i < parent.childCount; i++)
-            {
-                Transform child = parent.GetChild(i);
-                Vector3 beforeLocal = child.localPosition;
-                Vector3 beforeWorld = child.position;
-                Debug.Log($"[Normalize] Avant: Child '{child.name}' local={beforeLocal} world={beforeWorld} scale={child.localScale}");
-                // Appliquer le scale du parent à la position locale de l'enfant
-                child.localPosition = Vector3.Scale(child.localPosition, parentScale)+parent.position;
-              
-                Vector3 childScale = child.localScale;
-                child.localScale = new Vector3(
-                    childScale.x * parentScale.x,
-                    childScale.y * parentScale.y,
-                    childScale.z * parentScale.z
-                );
-                Vector3 afterLocal = child.localPosition;
-                Vector3 afterWorld = child.position;
-                Debug.Log($"[Normalize] Après: Child '{child.name}' local={afterLocal} world={afterWorld} scale={child.localScale}");
-            }
-            Debug.Log($"[Normalize] Parent before reset: position={parent.position} scale={parent.localScale}");
-            parent.position = Vector3.zero; // Reset parent position to avoid double transform
-            parent.localScale = Vector3.one;
-            Debug.Log($"[Normalize] Parent after reset: position={parent.position} scale={parent.localScale}");
         }
+    }
+#endregion
+       
+
 
 #if UNITY_EDITOR
-            // Affiche un trait de 1 m de haut à l'origine du monde dans la scène (gizmos)
     private void OnDrawGizmos()
-    {
-        if (Settings == null || !Settings.showGizmo) return;
-        Gizmos.color = Color.green;
-        Vector3 start = Vector3.zero;
-        Vector3 end = new Vector3(0, Settings.gizmoSize, 0);
-        Gizmos.DrawLine(start, end);
-        float LineHalfSize = Settings.gizmoSize * 0.1f;
-        Gizmos.DrawLine(end + Vector3.left * LineHalfSize, end + Vector3.right * LineHalfSize);
-    }
+        {
+            if (Settings == null || !Settings.showGizmo) return;
+            if (!Application.isEditor) return;
+            if (UnityEditor.SceneManagement.PrefabStageUtility.GetCurrentPrefabStage() == null) return;//si on est pas en mode prefab on sort 
+            DrawGizmoScale();
+
+            static void DrawGizmoScale()
+            {
+                Gizmos.color = Color.green;
+                Vector3 start = Vector3.zero;
+                Vector3 end = new Vector3(0, Settings.gizmoSize, 0);
+                Gizmos.DrawLine(start, end);
+                float LineHalfSize = Settings.gizmoSize * 0.1f;
+                Gizmos.DrawLine(end + Vector3.left * LineHalfSize, end + Vector3.right * LineHalfSize);
+            }
+        }
 #endif
 
-}
+    }
 
 }
