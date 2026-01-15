@@ -233,30 +233,57 @@ public class PlantBuilder : PlantHierarchy
         return objectsMeshes;
     }
 
-
         /// <summary>
-        /// Vérifie si le prefab est normalisé (position zéro, scale unitaire).
-        /// Si ce n'est pas le cas, log un message et applique la normalisation aux PlantNodes.
+        /// Retourne true si le prefab a une position locale nulle et un scale unitaire.
+        /// </summary>
+        public bool IsPrefabTransformNormalized()
+        {
+            Transform parent = transform;
+            return parent.localPosition == Vector3.zero && parent.localScale == Vector3.one;
+        }
+         
+        /// <summary>
+        /// Applique la normalisation aux PlantNodes.
         /// </summary>
         public void NormalizePrefabTransform()
         {
+            ApplyPositionToPlantNodes();
+            ApplyScaleToPlantNodes();
+        }
+
+         /// <summary>
+        /// Vérifie que tous les enfants directs du prefab ont une position locale Y à zéro.
+        /// Retourne true si tous les enfants sont OK, false sinon.
+        /// </summary>
+        public bool AreChildrenLocalYZero()
+        {
             Transform parent = transform;
-            bool notNormalized = false;
-            if (parent.localPosition != Vector3.zero)
+            for (int i = 0; i < parent.childCount; i++)
             {
-                Debug.LogWarning($"[PlantBuilder] Le prefab n'est pas normalisé : position != Vector3.zero ({parent.localPosition})");
-                notNormalized = true;
-                ApplyPositionToPlantNodes();
+                Transform child = parent.GetChild(i);
+                if (Mathf.Abs(child.localPosition.y) > 1e-4f)
+                {
+                    return false;
+                }
             }
-            if (parent.localScale != Vector3.one)
+            return true;
+        }
+
+          /// <summary>
+        /// Remet la position locale Y de tous les enfants directs à zéro.
+        /// </summary>
+        public void SetChildrenLocalYToZero()
+        {
+            Transform parent = transform;
+            for (int i = 0; i < parent.childCount; i++)
             {
-                Debug.LogWarning($"[PlantBuilder] Le prefab n'est pas normalisé : scale != Vector3.one ({parent.localScale})");
-                notNormalized = true;
-                ApplyScaleToPlantNodes();
-            }
-            if (!notNormalized)
-            {
-                Debug.Log("[PlantBuilder] Le prefab est déjà normalisé (position = 0, scale = 1)");
+                Transform child = parent.GetChild(i);
+                Vector3 pos = child.localPosition;
+                if (Mathf.Abs(pos.y) > 1e-4f)
+                {
+                    pos.y = 0f;
+                    child.localPosition = pos;
+                }
             }
         }
 
@@ -308,6 +335,8 @@ public class PlantBuilder : PlantHierarchy
         Vector3 start = Vector3.zero;
         Vector3 end = new Vector3(0, Settings.gizmoSize, 0);
         Gizmos.DrawLine(start, end);
+        float LineHalfSize = Settings.gizmoSize * 0.1f;
+        Gizmos.DrawLine(end + Vector3.left * LineHalfSize, end + Vector3.right * LineHalfSize);
     }
 #endif
 
