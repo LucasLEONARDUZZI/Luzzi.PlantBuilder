@@ -22,23 +22,29 @@ namespace Luzzi.PlantSystem
         {
             if (_meshFilter == null) return;
 
+            // Récupère les objets à combiner et leurs meshes
             _combineObjects = objectsMeshes.Keys.ToArray();
             Mesh[] meshes = objectsMeshes.Values.ToArray();
             CombineInstance[] combine = new CombineInstance[objectsMeshes.Count];
             for (int i = 0; i < combine.Length; i++)
             {
+                // Clone le mesh pour éviter de modifier l'original
                 Mesh cloneMesh = Instantiate(meshes[i]);
 
                 combine[i].mesh = cloneMesh;
-                combine[i].transform = gameObject.transform.worldToLocalMatrix * _combineObjects[i].transform.localToWorldMatrix;
+                // ...existing code...
+                combine[i].transform = _combineObjects[i].transform.localToWorldMatrix;
 
+                // Désactive l'objet enfant après le merge pour éviter les doublons visuels
                 _combineObjects[i].gameObject.SetActive(false);
             }
 
+            // Crée le mesh combiné et fusionne tous les meshes enfants
             Mesh combinedMesh = new Mesh();
-            combinedMesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
+            combinedMesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32; // Supporte >65k vertices
             combinedMesh.CombineMeshes(combine);
 
+            // Assigne le mesh combiné au MeshFilter du parent
             _meshFilter.sharedMesh = combinedMesh;
             _isCombined = true;
         }
@@ -124,6 +130,7 @@ namespace Luzzi.PlantSystem
             mesh.SetUVs(channel, uvs.ToArray());
         }
 
+        // summarize: Définit une valeur constante pour un composant d'un canal UV donné sur tout le mesh (ex: fixer UV3.z à une valeur pivot pour tous les sommets)
         public void SetUVsConstant(int channel, int axis, float value)
         {
             if (_meshFilter == null) return;

@@ -20,7 +20,19 @@ public class PlantBuilderEditor : UnityEditor.Editor
 
     public override void OnInspectorGUI()
     {
-
+    // Gizmo controls: constants, plus info
+    EditorGUILayout.Space(10);
+        var settings = PlantBuilder.Settings;
+        if (settings != null)
+        {
+            SerializedObject settingsSO = new SerializedObject(settings);
+            settingsSO.Update();
+            EditorGUILayout.BeginHorizontal();
+            EditorGUILayout.PropertyField(settingsSO.FindProperty("gizmoSize"), new GUIContent("Etalon"));
+            EditorGUILayout.PropertyField(settingsSO.FindProperty("showGizmo"), GUIContent.none, GUILayout.Width(16));
+            EditorGUILayout.EndHorizontal();
+            settingsSO.ApplyModifiedProperties();
+        }
         PlantBuilder builder = (PlantBuilder)target;
         bool isPrefabStage = PrefabStageUtility.GetCurrentPrefabStage() != null;
         

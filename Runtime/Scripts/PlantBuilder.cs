@@ -10,6 +10,27 @@ namespace Luzzi.PlantSystem
 [ExecuteInEditMode, RequireComponent(typeof(MeshCombiner))]
 public class PlantBuilder : PlantHierarchy
 {
+    private static PlantBuilderSettings _settings;
+    public static PlantBuilderSettings Settings
+    {
+        get
+        {
+            if (_settings == null)
+            {
+                _settings = Resources.Load<PlantBuilderSettings>("PlantBuilderSettings");
+#if UNITY_EDITOR
+                if (_settings == null)
+                {
+                    _settings = ScriptableObject.CreateInstance<PlantBuilderSettings>();
+                    System.IO.Directory.CreateDirectory("Assets/Resources");
+                    UnityEditor.AssetDatabase.CreateAsset(_settings, "Assets/Resources/PlantBuilderSettings.asset");
+                    UnityEditor.AssetDatabase.SaveAssets();
+                }
+#endif
+            }
+            return _settings;
+        }
+    }
     private bool _editMode = false;
     public bool EditMode => _editMode;
 
@@ -81,6 +102,9 @@ public class PlantBuilder : PlantHierarchy
                 
             }
             
+            // Normalize prefab transform to avoid merge issues
+            NormalizePrefabTransform();
+
             _combiner.Combine(GetObjetsMeshesToCombine());
             // Normalize UV2.w (remap all values between 0 and 1) as it is used as growth progression in shader
             _combiner.NormalizeUVs(2, 3);
@@ -208,6 +232,85 @@ public class PlantBuilder : PlantHierarchy
 
         return objectsMeshes;
     }
+
+
+        /// <summary>
+        /// Vérifie si le prefab est normalisé (position zéro, scale unitaire).
+        /// Si ce n'est pas le cas, log un message et applique la normalisation aux PlantNodes.
+        /// </summary>
+        public void NormalizePrefabTransform()
+        {
+            Transform parent = transform;
+            bool notNormalized = false;
+            if (parent.localPosition != Vector3.zero)
+            {
+                Debug.LogWarning($"[PlantBuilder] Le prefab n'est pas normalisé : position != Vector3.zero ({parent.localPosition})");
+                notNormalized = true;
+                ApplyPositionToPlantNodes();
+            }
+            if (parent.localScale != Vector3.one)
+            {
+                Debug.LogWarning($"[PlantBuilder] Le prefab n'est pas normalisé : scale != Vector3.one ({parent.localScale})");
+                notNormalized = true;
+                ApplyScaleToPlantNodes();
+            }
+            if (!notNormalized)
+            {
+                Debug.Log("[PlantBuilder] Le prefab est déjà normalisé (position = 0, scale = 1)");
+            }
+        }
+
+        /// <summary>
+        /// Applique la position locale du parent à tous les enfants directs puis remet le parent à zéro.
+        /// </summary>
+        public void ApplyPositionToPlantNodes()
+        {
+            Transform parent = transform;
+            Vector3 parentPosition = parent.localPosition;
+            if (parentPosition == Vector3.zero)
+                return;
+            for (int i = 0; i < parent.childCount; i++)
+            {
+                Transform child = parent.GetChild(i);
+                child.localPosition += parentPosition;
+            }
+            parent.localPosition = Vector3.zero;
+        }
+
+        /// <summary>
+        /// Applique le scale local du parent à tous les enfants directs puis remet le parent à 1.
+        /// </summary>
+        public void ApplyScaleToPlantNodes()
+        {
+            Transform parent = transform;
+            Vector3 parentScale = parent.localScale;
+            if (parentScale == Vector3.one)
+                return;
+            for (int i = 0; i < parent.childCount; i++)
+            {
+                Transform child = parent.GetChild(i);
+                Vector3 childScale = child.localScale;
+                child.localScale = new Vector3(
+                    childScale.x * parentScale.x,
+                    childScale.y * parentScale.y,
+                    childScale.z * parentScale.z
+                );
+            }
+            parent.localScale = Vector3.one;
+        }
+
+#if UNITY_EDITOR
+            // Affiche un trait de 1 m de haut à l'origine du monde dans la scène (gizmos)
+    private void OnDrawGizmos()
+    {
+        if (Settings == null || !Settings.showGizmo) return;
+        Gizmos.color = Color.green;
+        Vector3 start = Vector3.zero;
+        Vector3 end = new Vector3(0, Settings.gizmoSize, 0);
+        Gizmos.DrawLine(start, end);
+    }
+#endif
+
 }
 
 }
