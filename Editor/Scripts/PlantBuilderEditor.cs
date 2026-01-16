@@ -15,6 +15,8 @@ public class PlantBuilderEditor : UnityEditor.Editor
     private Color errorColor = new Color(1f, 0.7f, 0.7f); // Light red
     private Color warningColor = new Color(1f, 0.85f, 0.5f); // Light orange
 
+    private bool isHoveringRecenterButton = false;
+
     private void OnEnable()
     {
         speedFactorProperty = serializedObject.FindProperty("_lifeCycleFactor");
@@ -293,6 +295,35 @@ public class PlantBuilderEditor : UnityEditor.Editor
         {
             EditorGUILayout.HelpBox("Prefab isn't normalized.\nIt will be automatically normalized upon saving.", MessageType.Warning);
         }
+
+        // --- Section Recentrage ---
+        EditorGUILayout.Space(10);
+        EditorGUILayout.LabelField("Recenter", EditorStyles.boldLabel);
+
+        var recenterTooltip = new GUIContent(
+            "Recenter all PlantNodes",
+            "Moves all PlantNodes so their average position is at the origin. Hover to preview the change."
+        );
+
+        // On récupère le rect du bouton pour détecter le hover
+        Rect buttonRect = GUILayoutUtility.GetRect(recenterTooltip, GUI.skin.button);
+
+        // Hover preview (uniquement en mode édition)
+        bool currentHoveringSituation = isEditMode && buttonRect.Contains(Event.current.mousePosition);
+        if (isHoveringRecenterButton != currentHoveringSituation)
+        {
+            SceneView.RepaintAll();
+        }
+        isHoveringRecenterButton = currentHoveringSituation;
+
+        EditorGUI.BeginDisabledGroup(!isEditMode);
+        if (GUI.Button(buttonRect, recenterTooltip))
+        {
+            Undo.RecordObject(builder.transform, "Recenter PlantNodes");
+            builder.RecenterChildrenToOrigin();
+            EditorUtility.SetDirty(builder);
+        }
+        EditorGUI.EndDisabledGroup();
         #endregion
 
         // Section Gizmos à la fin
@@ -309,6 +340,13 @@ public class PlantBuilderEditor : UnityEditor.Editor
             settingsSO.ApplyModifiedProperties();
         }
     }
-           
+           void OnSceneGUI()
+    {
+        if (isHoveringRecenterButton)
+        {
+            PlantBuilder builder = (PlantBuilder)target;
+            PlantBuilder.DrawRecenterPreviewHandles(builder, Color.yellow);
+        }
+    }
 }
 }

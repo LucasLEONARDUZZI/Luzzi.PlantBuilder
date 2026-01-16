@@ -316,6 +316,92 @@ public class PlantBuilder : PlantHierarchy
         }
     }
 #endregion
+
+#region Recenter
+    /// <summary>
+    /// Dessine la preview de recentrage avec Handles (éditeur uniquement, fonctionne en mode prefab).
+    /// </summary>
+    /// <param name="plantBuilder">L'instance à prévisualiser</param>
+    /// <param name="color">Couleur des lignes</param>
+    public static void DrawRecenterPreviewHandles(PlantBuilder plantBuilder, Color? color = null)
+    {
+#if UNITY_EDITOR
+        if (plantBuilder == null) return;
+        Vector3 average = plantBuilder.GetChildrenAverageWorldPosition();
+        Transform parent = plantBuilder.transform;
+        Color lineColor = color ?? Color.cyan;
+        lineColor.a = 0.3f;
+        Color placeholderColor = color ?? Color.cyan;
+        float placeholderSize = 0.1f;
+        
+        for (int i = 0; i < parent.childCount; i++)
+        {
+            Transform child = parent.GetChild(i);
+            Vector3 from = child.position;
+            Vector3 to = child.position - average;
+            Vector3 direction = (to - from).normalized;
+            Handles.color = lineColor;
+            Handles.DrawLine(from, (to-(direction * placeholderSize)));
+            Handles.color = placeholderColor;
+            Handles.DrawWireDisc(to, Vector3.up, placeholderSize);
+        }
+        
+#endif
+    }
+ /// <summary>
+    /// Affiche un Debug.DrawLine entre la position actuelle de chaque enfant et sa future position après recentrage.
+    /// (Utilisable pour prévisualiser le recentrage dans la scène.)
+    /// </summary>
+    public void DrawRecenterPreview(Color? color = null, float duration = 5f)
+    {
+        Vector3 average = GetChildrenAverageWorldPosition();
+        Transform parent = transform;
+        Color lineColor = color ?? Color.cyan;
+        for (int i = 0; i < parent.childCount; i++)
+        {
+            Transform child = parent.GetChild(i);
+            Vector3 from = child.position;
+            Vector3 to = child.position - average;
+            Debug.DrawLine(from, to, lineColor, duration);
+        }
+        Debug.DrawLine(parent.position, parent.position - average, Color.yellow);
+    }
+
+ /// <summary>
+    /// Recentre tous les enfants directs autour de l'origine en soustrayant la moyenne de leur position globale.
+    /// </summary>
+    public void RecenterChildrenToOrigin()
+    {
+        Vector3 average = GetChildrenAverageWorldPosition();
+        Transform parent = transform;
+        for (int i = 0; i < parent.childCount; i++)
+        {
+            Transform child = parent.GetChild(i);
+            // On veut que la nouvelle position globale soit child.position - average
+            // Donc, en local :
+            child.position -= average;
+        }
+    }
+
+/// <summary>
+    /// Calcule la moyenne des positions globales de tous les GameObjects enfants directs du prefab.
+    /// </summary>
+    /// <returns>Le centre moyen (Vector3) de tous les enfants directs.</returns>
+    public Vector3 GetChildrenAverageWorldPosition()
+    {
+        Transform parent = transform;
+        if (parent.childCount == 0) return parent.position;
+        Vector3 sum = Vector3.zero;
+        int count = 0;
+        for (int i = 0; i < parent.childCount; i++)
+        {
+            Transform child = parent.GetChild(i);
+            sum += child.position;
+            count++;
+        }
+        return sum / Mathf.Max(1, count);
+    }
+#endregion
        
 
 
