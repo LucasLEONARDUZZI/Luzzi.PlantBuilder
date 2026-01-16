@@ -12,11 +12,11 @@
     "tools"
   ],
   "author": {
-  "name": "Luzzi"
+"name": "Augustin Grassien"
 },
-"contributors": [
+"maintener": [
   {
-    "name": "Augustin Grassien"
+   "name": "Luzzi"
   }
 ],
   "license": "Proprietary",
