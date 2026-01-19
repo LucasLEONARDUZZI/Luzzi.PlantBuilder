@@ -1,0 +1,170 @@
+
+// Advection + Splatting.
+#pragma kernel AdvectVelocity
+#pragma kernel Splat
+// Divergence + Pressure
+#pragma kernel ComputeDivergence
+#pragma kernel JacobiPressure
+#pragma kernel SubtractPressureGradient
+
+cbuffer Params
+{
+    int _Width;
+    int _Height;
+    float _Dt;
+    float _DissipationRate;
+    float2 _TexelSize; // (1 / Width, 1 / Height)
+}
+
+// INPUT TEXTURES
+Texture2D<float2> _VelocityIn; // xy
+//Texture2D<float4> _DyeIn; // color // TODO advect the water color ?
+Texture2D<float2> _VelocityForDivergence; // velocity after splatting
+Texture2D<float> _PressureIn; // pressure ping-pong
+Texture2D<float> _Divergence; // divergence
+
+// OUTPUT TEXTURES (RW)
+RWTexture2D<float2> _VelocityOut; // xy
+//RWTexture2D<float4> _DyeOut; // color // TODO advect the water color ?
+RWTexture2D<float> _DivergenceOut;
+RWTexture2D<float> _PressureOut;
+RWTexture2D<float2> _VelocityProjectedOut;
+
+// Splat parameters
+float2 _PointUV;
+float _Radius;
+float2 _Force;
+float _SplatStrength;
+
+// HELPERS
+#include "../Includes/UtilsCompute.hlsl"
+
+// Kernel 1 : Advect velocity
+[numthreads(8, 8, 1)]
+void AdvectVelocity(uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= (uint) _Width || id.y >= (uint) _Height)
+        return;
+
+    int2 size = int2(_Width, _Height);
+    int2 position = id.xy;
+    
+	// uv center in a texel
+    float2 uv = (position + 0.5) * _TexelSize;
+
+	// Semi-Lagrangian : we make a backtrace
+	// x_prev = x - dt * u(x)
+    float2 velocity = ReadVector2(_VelocityIn, size, position);
+    float2 previousUV = uv - _Dt * velocity * _TexelSize; // velocity ~= texel/s (we go back in tiiime)
+    previousUV = clamp(previousUV, 0.0, 1.0);
+
+	// We just make a bilinear sampling on velocity to get the advected velocity
+    float2 advected = SampleBilinearVelocity(_VelocityIn, size, previousUV);
+
+	// Dissipation avoid to accumulate indefinitely values
+    float dissipation = _DissipationRate * _Dt;
+    advected = float2
+        (
+            advected.x > 0 ? saturate(advected.x - dissipation) : -saturate(-advected.x - dissipation),
+            advected.y > 0 ? saturate(advected.y - dissipation) : -saturate(-advected.y - dissipation)
+        );
+    _VelocityOut[id.xy] = advected;
+}
+
+// Kernel 2 : Splat
+[numthreads(8, 8, 1)]
+void Splat(uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= (uint) _Width || id.y >= (uint) _Height)
+        return;
+
+	// uv center in a texel
+    float2 uv = (float2(id.xy) + 0.5) * _TexelSize;
+
+	// uv to input position
+    float2 d = uv - _PointUV;
+    float dist2 = dot(d, d);
+
+	// gaussian mask
+    float r2 = _Radius * _Radius;
+    float mask = exp(-dist2 / max(r2, 1e-6));
+
+	// Add some velocity
+    float2 velocity = _VelocityOut[id.xy];
+    velocity += _Force * (mask * _SplatStrength);
+    _VelocityOut[id.xy] = velocity;
+}
+
+// Kernel 3 : Divergence
+[numthreads(8, 8, 1)]
+void ComputeDivergence(uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= (uint) _Width || id.y >= (uint) _Height)
+        return;
+
+    int2 size = int2(_Width, _Height);
+    int2 position = int2(id.xy);
+
+    // Get velocity in neighbours
+    float2 left = ReadVector2(_VelocityForDivergence, size, position + int2(-1, 0));
+    float2 right = ReadVector2(_VelocityForDivergence, size, position + int2(1, 0));
+    float2 bottom = ReadVector2(_VelocityForDivergence, size, position + int2(0, -1));
+    float2 top = ReadVector2(_VelocityForDivergence, size, position + int2(0, 1));
+
+    // divergence = d(vx)/dx + d(vy)/dy
+    float divergence = (right.x - left.x + top.y - bottom.y) * 0.5; // 0.5 to average vertical and horizontal
+
+    _DivergenceOut[position] = divergence;
+}
+
+// Kernel 4 : Pressure
+[numthreads(8, 8, 1)]
+void JacobiPressure(uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= (uint) _Width || id.y >= (uint) _Height)
+        return;
+
+    int2 size = int2(_Width, _Height);
+    int2 position = int2(id.xy);
+
+    // Poisson: ∇²p = divergence
+    // Jacobi pressure formula : (pL + pR + pB + pT + alpha * div) * (1/ beta)
+	// where pL = pressure on left, pR = pressure on right, pT = pressure on top, pB = pressure on bottom
+    // For a grid with h = 1 : alpha = -1, beta = 4
+    float pL = ReadScalar(_PressureIn, size, position + int2(-1, 0));
+    float pR = ReadScalar(_PressureIn, size, position + int2(1, 0));
+    float pB = ReadScalar(_PressureIn, size, position + int2(0, -1));
+    float pT = ReadScalar(_PressureIn, size, position + int2(0, 1));
+
+    float div = ReadScalar(_Divergence, size, position);
+
+    float pNew = (pL + pR + pB + pT - div) * 0.25; // inv Beta = 0.25 to average 4 neighbors
+    _PressureOut[position] = pNew;
+}
+
+// Kernel 5 : Projected Velocity (using pressure gradient)
+[numthreads(8, 8, 1)]
+void SubtractPressureGradient(uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= (uint) _Width || id.y >= (uint) _Height)
+        return;
+
+    int2 size = int2(_Width, _Height);
+    int2 position = int2(id.xy);
+
+    // pressure gradient: ∇p ≈ (pR - pL)/(2h), (pT - pB)/(2h)
+	// where pL = pressure on left, pR = pressure on right, pT = pressure on top, pB = pressure on bottom
+	// For a grid with h = 1
+    float pL = ReadScalar(_PressureIn, size, position + int2(-1, 0));
+    float pR = ReadScalar(_PressureIn, size, position + int2(1, 0));
+    float pB = ReadScalar(_PressureIn, size, position + int2(0, -1));
+    float pT = ReadScalar(_PressureIn, size, position + int2(0, 1));
+
+    float2 gradient = float2(pR - pL, pT - pB) * 0.5; // 0.5 to average
+
+    float2 velocity = ReadVector2(_VelocityForDivergence, size, position);
+
+    // Projected velocity : v = v - ∇p
+    _VelocityProjectedOut[position] = velocity - gradient;
+}
+
