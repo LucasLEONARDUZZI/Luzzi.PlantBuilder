@@ -6,13 +6,6 @@ Shader "Custom/FPR_Master"
         [Header(MAIN SETTINGS)]
         [Space(5)]
         _AtlasMap("Atlas Texture", 2D) = "black" {}
-        _TimeSpeed("Time Speed", Float) = 1.0
-        _CycleDuration("Cycle Duration (s)", Float) = 300.0
-        
-        [Header(DEBUG)]
-        [Space(5)]
-        [Toggle] _DebugMode("Debug Mode", Float) = 0
-        _DebugColor("Debug Color", Color) = (1,0,1,1)
 
         [Header(GROWTH)]
         [Space(5)]
@@ -29,6 +22,8 @@ Shader "Custom/FPR_Master"
         _ReflectionColor("Color", Color) = (0.6,0.6,0.6,0.5)
         _ReflectionDeformFreq("Deform Frequency", Float) = 64
         _ReflectionDeformAmp("Deform Amplitude", Float) = 0.1
+        _ReflectionNoiseScale("Noise Scale", Float) = 1
+        _ReflectionVelocityStrength("Water Velocity Strength", Float) = 0.5
         _PlaneHeight("Plane Height (Y)", Float) = 0.0
         _ReflectionTimeFactor("Reflection Time Factor", Float) = 1
         

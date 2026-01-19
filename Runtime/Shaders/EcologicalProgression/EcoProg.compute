@@ -1,0 +1,240 @@
+#pragma kernel ComputeSoilQuality
+#pragma kernel UpdateLifeCycles
+#pragma kernel InitLifeCycles
+#pragma kernel ComputeSoilAttractivity
+
+// PARAMETERS
+cbuffer Commons
+{
+    int _Width;
+    int _Height;
+    float _Dt;
+}
+
+cbuffer SoilQualityParams
+{
+    float _VelocityStrength;
+    float _PressureStrength;
+    float _RecoveryRate;
+}
+
+cbuffer CyclesParams
+{
+    float4 _GrowthSpeeds; // 1 / Growth Duration, x = speed1 / y = speed2 / z = speed3 / w = speed4
+    float4 _DecaySpeeds; // 1 / Decay Duration, x = speed1 / y = speed2 / z = speed3 / w = speed4
+    float4 _Thresholds; // x = threshold1 / y = threshold2 / z = threshold3 / w = threshold4
+    float _Margin; // Avoid oscillations around threshold
+};
+
+cbuffer SoilAttractivityParams
+{
+    float _MinDelta;
+};
+
+// TEXTURE INPUTS
+Texture2D<float2> _VelocityTex; // xy
+Texture2D<float> _PressureTex; // x
+Texture2D<float> _SoilQualityIn;
+Texture2D<float4> _GrowthCyclesIn;
+Texture2D<float4> _DecayCyclesIn;
+
+// TEXTURE OUTPUTS
+RWTexture2D<float> _SoilQualityOut; // soil quality : 0 = best quality / 1 = no quality
+RWTexture2D<float4> _GrowthCyclesOut;
+RWTexture2D<float4> _DecayCyclesOut;
+RWTexture2D<float2> _SoilAttractivityOut;
+
+// HELPERS
+#include "../Includes/UtilsCompute.hlsl"
+
+// Kernel 1 : Soil Quality base layer
+[numthreads(8, 8, 1)]
+void ComputeSoilQuality(uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= (uint) _Width || id.y >= (uint) _Height)
+        return;
+
+    int2 size = float2(_Width, _Height);
+    int2 position = id.xy;
+    
+    float prevSoilQuality = ReadScalar(_SoilQualityIn, size, position);
+    
+    float pressure = ReadScalar(_PressureTex, size, position) * _PressureStrength;
+    float2 velocity = ReadVector2(_VelocityTex, size, position) * _VelocityStrength;
+    float presence = saturate(pressure + length(velocity)) * _Dt;
+    
+    float recovery = _RecoveryRate * _Dt;
+    float newSoilQuality = prevSoilQuality + recovery - presence;
+    newSoilQuality = saturate(newSoilQuality);
+
+    _SoilQualityOut[position] = newSoilQuality;
+}
+
+// Kernel 2 : Update life cycles to control plants with textures
+[numthreads(8, 8, 1)]
+void UpdateLifeCycles(uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= (uint) _Width || id.y >= (uint) _Height)
+        return;
+    
+    int2 size = float2(_Width, _Height);
+    int2 position = id.xy;
+    float eps = 1e-06;
+    
+    float quality = ReadScalar(_SoilQualityIn, size, position);
+    
+    float4 growths = ReadVector4(_GrowthCyclesIn, size, position);
+    float4 decays = ReadVector4(_DecayCyclesIn, size, position);
+    
+    // For each plant category
+    for (int category = 0; category < 4; category++)
+    {
+        // Retrieve growth and decay value for current category
+        float growth = GetChannel(growths, category);
+        float growthSpeed = GetChannel(_GrowthSpeeds, category);
+        float decay = GetChannel(decays, category);
+        float decaySpeed = GetChannel(_DecaySpeeds, category);
+        
+        // Use margin to avoid oscillation around thresholds
+        float threshold = _Thresholds[category];
+        float thresholdLow = threshold - _Margin;
+        float thresholdHigh = threshold + _Margin;
+        
+        // Check the soil quality
+        bool soilIsGood = (quality > thresholdHigh);
+        bool soilIsBad = (quality < thresholdLow);
+        
+        // Are we already decaying ?
+        bool isDecaying = (decay > 0.0);
+        
+        // Start the decay if we are growing and the soil becomes bad        
+        if (!isDecaying && growth > 0.0 && soilIsBad)
+        {
+            decay = eps; // we start decay so the value should be more than 0
+            isDecaying = true;
+        }
+        
+        // Manage growth if we are not decaying
+        if (!isDecaying)
+        {
+            if (soilIsGood)
+            {
+                float delta = growthSpeed * _Dt;
+                growth = growth + delta;
+            }
+            
+            // Auto decay if growth as been completed
+            if (growth >= 1.0)
+            {
+                decay = eps; // we start decay so the value should be more than 0
+                isDecaying = true;
+            }
+        }
+        
+        // Manage decay
+        if (isDecaying)
+        {
+            float delta = decaySpeed * _Dt;
+            decay = saturate(decay + delta);
+            
+            // Once the decay is finished, reset values
+            if (decay >= 1)
+            {
+                growth = -RandomRange01(position); // Set to negative to make random delay before growing back
+                decay = 0.0;
+                isDecaying = false;
+            }
+        }
+        
+        SetChannel(growths, category, growth);
+        SetChannel(decays, category, decay);
+    }
+    
+    _GrowthCyclesOut[position] = growths;
+    _DecayCyclesOut[position] = decays;
+}
+
+// Sort of Kernel 0
+// Called once on init to have variation in growth start
+[numthreads(8, 8, 1)]
+void InitLifeCycles(uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= (uint) _Width || id.y >= (uint) _Height)
+        return;
+
+    int2 position = int2(id.xy);
+    
+    float quality = 1;
+    float4 growths = 0;
+    float4 decays = 0;
+    
+    // Random growth value based on position + random seed
+    growths.x = RandomRange01(position + int2(11, 37));
+    growths.y = RandomRange01(position + int2(53, 19));
+    growths.z = RandomRange01(position + int2(97, 101));
+    growths.w = RandomRange01(position + int2(7, 149));
+    
+    //float distribution = RandomRange01(position + int2(999.1, 123.4));
+    //if (distribution > 0.01)
+    //{
+    //    float eps = 1e-04; // make sure isDecaying = true
+    //    // Random decay value based on position + random seed
+    //    decays.x = eps + RandomRange01(position + int2(301, 11));
+    //    decays.y = eps + RandomRange01(position + int2(302, 12));
+    //    decays.z = eps + RandomRange01(position + int2(303, 13));
+    //    decays.w = eps + RandomRange01(position + int2(304, 14));
+    //}
+
+    _GrowthCyclesOut[position] = saturate(growths);
+    _DecayCyclesOut[position] = saturate(decays);
+    _SoilQualityOut[position] = quality;
+}
+
+// Kernel 3 : Create vector map for fishes
+// TODO Maybe first make a downsample of the soil quality to have a much less noisy attractivity
+[numthreads(8, 8, 1)]
+void ComputeSoilAttractivity(uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= (uint) _Width || id.y >= (uint) _Height)
+        return;
+
+    int2 size = float2(_Width, _Height);
+    int2 position = int2(id.xy);
+    
+    float quality = ReadScalar(_SoilQualityIn, size, position);
+    
+    // 8 neighbours
+    int2 directions[8] =
+    {
+        int2(1, 0),
+        int2(-1, 0),
+        int2(0, 1),
+        int2(0, -1),
+        int2(1, 1),
+        int2(1, -1),
+        int2(-1, 1),
+        int2(-1, -1)
+    };
+    
+    float2 vectorSum = 0;
+    
+    [unroll]
+    for (int i = 0; i < 8; i++)
+    {
+        int2 direction = directions[i];
+        int2 neighbourPosition = clamp(position + direction, int2(0, 0), size - 1);
+
+        float neighbourQuality = ReadScalar(_SoilQualityIn, size, neighbourPosition);
+        float delta = neighbourQuality - quality;
+        
+        // Make sur the difference is big enough
+        if (abs(delta) < _MinDelta) continue;
+
+        vectorSum += float2(direction) * delta; // add weighted vector
+    }
+
+    float2 attractivity = vectorSum / 8;
+
+    _SoilAttractivityOut[position] = -attractivity; // negate because we want to be in world space
+}
+

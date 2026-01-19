@@ -8,8 +8,7 @@ namespace Luzzi.PlantSystem.Editor
 [CustomEditor(typeof(PlantBuilder))]
 public class PlantBuilderEditor : UnityEditor.Editor
 {
-    private SerializedProperty speedFactorProperty;
-    private SerializedProperty growthDecayBalanceProperty;
+    private SerializedProperty categoryProperty;
     private PlantBuilder _builder;
 
     private Color errorColor = new Color(1f, 0.7f, 0.7f); // Light red
@@ -19,8 +18,7 @@ public class PlantBuilderEditor : UnityEditor.Editor
 
     private void OnEnable()
     {
-        speedFactorProperty = serializedObject.FindProperty("_lifeCycleFactor");
-        growthDecayBalanceProperty = serializedObject.FindProperty("_growthDecayBalance");
+        categoryProperty = serializedObject.FindProperty("_category");
     }
 
     public override void OnInspectorGUI()
@@ -203,7 +201,7 @@ public class PlantBuilderEditor : UnityEditor.Editor
 
         serializedObject.Update();
 
-        EditorGUILayout.Slider(speedFactorProperty, 0f, 1f);
+        EditorGUILayout.IntSlider(categoryProperty, 0, 3);
         serializedObject.ApplyModifiedProperties();
 
         if (GUILayout.Button("REFRESH"))

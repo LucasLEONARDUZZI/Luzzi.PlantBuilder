@@ -55,4 +55,9 @@ float3 GetCameraForwardWS()
     return normalize(UNITY_MATRIX_I_V._m02_m12_m22); // forward world (selon pipeline)
 }
 
+float GetChannel(float4 v, int i)
+{
+    return (i == 0) ? v.x : (i == 1) ? v.y : (i == 2) ? v.z : v.w;
+}
+
 #endif // UTILS_INCLUDE
