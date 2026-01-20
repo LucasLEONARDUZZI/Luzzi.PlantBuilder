@@ -1,0 +1,122 @@
+// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel CSMain
+
+StructuredBuffer<float3> _InVertices;
+RWStructuredBuffer<float3> _OutVertices;
+RWStructuredBuffer<float3> _OutCurve;
+
+uint _VertexCount;
+
+// Helix curve parameters
+float _Height;
+float4 _Offset;
+float _Turns;
+bool _OnlyCurve;
+
+static const float PI = 3.14159265359;
+
+// Returns the curve point position at y
+float3 Curve(float y)
+{
+    // normalize Y so the helix fits into the desired height
+    float t = y / _Height;
+    t = clamp(t, 0.0, 1.0);
+    
+    float eps = 1e-06;
+    float turns = max(_Turns, eps);
+    
+    // Angle at t
+    float theta = 2.0 * PI * turns * t;
+    
+    // offsets at t gradually goes from 0 to Offset
+    float ox = _Offset.x * t;
+    float oz = _Offset.z * t;
+    
+    float oy = _Offset.y * PI * 2;
+    
+    // Helix curve
+    float curveX = ox * cos(theta + oy);
+    float curveZ = oz * sin(theta + oy);
+    
+    return float3(curveX, y, curveZ);
+}
+
+// Returns the curve point tangent at y
+float3 Tangent(float y)
+{
+    float eps = 1e-06;
+    
+    // Derivative
+    float3 point1 = Curve(y - eps);
+    float3 point2 = Curve(y + eps);
+    float3 tangent = point2 - point1;
+    
+    return normalize(tangent);
+}
+
+// Return the curve point radial vector at y
+float3 Radial(float y)
+{
+    float3 curve = Curve(y);
+    float3 radial = float3(curve.x, 0.0, curve.z);
+    
+    if (dot(radial, radial) < 1e-06)
+    {
+        // radial vector as a length of 0 so we pick an arbitrary direction
+        radial = float3(1.0, 0.0, 0.0);
+    }
+    
+    return normalize(radial);
+}
+
+// Returns the orthogonal frame for a point on the curve at y
+void Frame(float y, out float3 tangent, out float3 normal, out float3 binormal)
+{
+    // Get tangent and radial vectors
+    tangent = Tangent(y);
+    float3 radial = Radial(y);
+    
+    // Normal = projected R in the T plane
+    normal = normalize(radial - dot(radial, tangent) * tangent);
+    
+    // Binormal is just the cross product of tangent and normal
+    binormal = normalize(cross(tangent, normal));
+}
+
+float2 Rotate(float2 plane, float angle)
+{
+    float x = plane.x * cos(angle) - plane.y * sin(angle);
+    float y = plane.x * sin(angle) + plane.y * cos(angle);
+    
+    return float2(x, y);
+}
+
+[numthreads(64, 8, 1)]
+void CSMain(uint3 id : SV_DispatchThreadID)
+{
+    // Get vertex index
+    uint index = id.x;
+    if (index >= _VertexCount)
+    {
+        return;
+    }
+    
+    // vertex original position
+    float3 pos = _InVertices[index];
+    float y = pos.y;
+    
+    // Get curve point
+    float3 center = Curve(y);
+    
+    // Get curve point frame vectors
+    float3 tangent, normal, binormal;
+    Frame(y, tangent, normal, binormal);
+    // Rotate
+    float2 rotatedPos = Rotate(pos.xz, _Offset.w * 2.0 * PI);
+    
+    // Offset position = center + x * N + z * B
+    float3 newPos = center + (rotatedPos.x * normal) + (rotatedPos.y * -binormal);
+    
+    _OutVertices[index] = newPos;
+    _OutCurve[index] = center;
+}

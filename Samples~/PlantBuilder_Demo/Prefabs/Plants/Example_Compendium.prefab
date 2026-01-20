@@ -204,7 +204,7 @@ PrefabInstance:
     - target: {fileID: 8778017341726233873, guid: 93322b6c4a82ec24eb714a3e33f18ef9, type: 3}
       propertyPath: m_Mesh
       value: 
-      objectReference: {fileID: 4300000, guid: 7489178d958616b4d88e65dde471bf25, type: 2}
+      objectReference: {fileID: 4300000, guid: a33ec7a6d4169024990b924a0e9b034b, type: 2}
     - target: {fileID: 8906733163015986833, guid: 93322b6c4a82ec24eb714a3e33f18ef9, type: 3}
       propertyPath: m_Name
       value: Example_Compendium
