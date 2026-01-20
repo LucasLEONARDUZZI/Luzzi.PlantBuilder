@@ -1,3 +1,4 @@
+    
 // Fake Planar Reflection shader
 Shader "Custom/FPR_Master"
 {
@@ -118,6 +119,7 @@ Shader "Custom/FPR_Master"
 
             ENDHLSL
         }
+
     }
 
     FallBack Off

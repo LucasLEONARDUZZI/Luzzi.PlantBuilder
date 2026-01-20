@@ -54,7 +54,7 @@ public class PlantNode : PlantHierarchy
             if (Application.isEditor)
             {
                 self.UpdateModifier();
-                self.GenerateUV_LocalXY(3);
+                self.GenerateUV_LocalXY(UV_WORLD_POSITION_CHANNEL);
             }
         };
     }
@@ -271,7 +271,7 @@ public class PlantNode : PlantHierarchy
     /// </summary>
 
     private void GenerateUV_LocalXY(int channel)
-    {
+    {       
         if (_modifiedMesh == null || _modifier == null) return;
 
         Vector3[] vertices = _modifiedMesh.vertices;
