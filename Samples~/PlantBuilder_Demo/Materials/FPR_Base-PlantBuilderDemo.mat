@@ -7,7 +7,7 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: FPR_Base
+  m_Name: FPR_Base-PlantBuilderDemo
   m_Shader: {fileID: 4800000, guid: 61e1be98eb880df4497819cc1cdbd20f, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
