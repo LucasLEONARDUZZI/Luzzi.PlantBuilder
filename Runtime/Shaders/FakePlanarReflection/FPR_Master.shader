@@ -1,4 +1,3 @@
-    
 // Fake Planar Reflection shader
 Shader "Custom/FPR_Master"
 {
@@ -52,6 +51,15 @@ Shader "Custom/FPR_Master"
         [Header(ALPHA)]
         [Space(5)]
         _Cutoff("Alpha Cutoff", Range(0,1)) = 0.5
+
+        [Header(DISTANCE FADE)]
+        [Space(5)]
+        _FlatColor("Flat Color", Color) = (0.6,0.6,0.6,1)
+        _FlatStart("Flat Start Distance", Float) = 5
+        _FlatEnd("Flat End Distance", Float) = 10
+        _DitherStart("Dither Start Distance", Float) = 12
+        _DitherEnd("Dither End Distance", Float) = 16
+        [Toggle] _FlatExpMode("Flat Exponential Fade", Float) = 0
     }
 
     SubShader

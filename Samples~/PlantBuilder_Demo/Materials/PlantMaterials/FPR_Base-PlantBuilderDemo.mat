@@ -40,6 +40,11 @@ Material:
     - _Billboard: 0
     - _Cutoff: 0.5
     - _CycleDuration: 300
+    - _DitherEnd: 10
+    - _DitherStart: 5
+    - _FlatEnd: 10
+    - _FlatExpMode: 0
+    - _FlatStart: 1
     - _Flatten: 0
     - _GrowthProgressionRange: 0.5
     - _Luminosity: 0.5
@@ -65,6 +70,7 @@ Material:
     - _WindSpeedFactor: 1
     m_Colors:
     - _BaseColor: {r: 0.8490566, g: 0.81547934, b: 0.50863296, a: 1}
+    - _FlatColor: {r: 0.8301887, g: 0.51317114, b: 0.035243843, a: 1}
     - _ReflectionColor: {r: 0.6886792, g: 0.6425507, b: 0.45803666, a: 0.5}
     - _WindDirection: {r: 1, g: 0, b: 0, a: 1}
   m_BuildTextureStacks: []

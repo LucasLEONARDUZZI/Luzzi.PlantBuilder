@@ -35,6 +35,12 @@ float3 _WindDirection;
 float _WindFrequency, _WindAmplitude, _WindLocalRange, _WindSpeedFactor;
 float _WaterWavingStrength, _WaterWavingLocalRange, _PlaneSize;
 float _Cutoff;
+float _FlatStart;
+float _FlatEnd;
+float4 _FlatColor;
+float _DitherStart;
+float _DitherEnd;
+float _FlatExpMode;
 CBUFFER_END
 
 // We declare the atlas texture and its sampler
@@ -195,8 +201,39 @@ half4 FragBase(Varyings input)
     
     float decayColorMask = saturate(EaseOutCirc(input.values.x + (1 - soilQuality)));
     half3 color = lerp(baseColor.rgb, decayColor, decayColorMask);
-	
+
+    // Distance fade to flat color
+    float dist = distance(input.positionWS, _WorldSpaceCameraPos);
+
+    float tFlat = saturate((dist - _FlatStart) / (_FlatEnd - _FlatStart));
+    // Exponentiel si activé
+    if (_FlatExpMode > 0.5)
+    {
+        tFlat = 1.0 - exp(-tFlat * 3.0); // 3.0 = facteur de rapidité, à ajuster
+    }
+    color = lerp(color, _FlatColor.rgb, tFlat);
+
+
+
     half alpha = lerp(baseColor.a, 0.0, input.values.y);
+
+    float ditherDist = saturate((dist - _DitherStart) / (_DitherEnd - _DitherStart));
+    if (ditherDist > 0.0)
+    {
+        // Motif Bayer 4x4 basé sur la position écran (pour éviter les artefacts fixes)
+        static const float bayer[16] = {
+            0.0/16.0,  8.0/16.0,  2.0/16.0, 10.0/16.0,
+           12.0/16.0,  4.0/16.0, 14.0/16.0,  6.0/16.0,
+            3.0/16.0, 11.0/16.0,  1.0/16.0,  9.0/16.0,
+           15.0/16.0,  7.0/16.0, 13.0/16.0,  5.0/16.0
+        };
+        int2 pixelPos = int2(floor(input.positionHCS.xy) % 4);
+        int bayerIdx = pixelPos.x + pixelPos.y * 4;
+        float threshold = bayer[bayerIdx];
+        if (ditherDist > threshold)
+            alpha = 0.0;
+    }
+
     clip(alpha - _Cutoff);
 
     return half4(color, alpha);
@@ -207,6 +244,7 @@ half4 FragReflection(Varyings input)
 {
     //float2 waterPlaneUV = 0.5 - (input.positionWS / _PlaneSize);
     
+
     half4 atlasColor = SAMPLE_TEXTURE2D(_AtlasMap, sampler_AtlasMap, input.uv0.xy);
 
     float eps = 1e-06;
@@ -214,14 +252,13 @@ half4 FragReflection(Varyings input)
     float3 toFrag = input.positionWS - camPos;
     float toFragDist = length(toFrag);
     float3 viewDir = (toFragDist > eps) ? (toFrag / toFragDist) : float3(0, 0, 1);
-	
+
     half alpha = lerp(atlasColor.a, 0.0, input.values.y);
     float2 planeUV = float2(0, 0);
-	
+
     if (abs(viewDir.y) > eps)
     {
         float t = (_PlaneHeight - camPos.y) / viewDir.y;
-		
         bool hit = (t > 0.0) && (t < toFragDist);
         if (!hit)
         {
@@ -232,30 +269,50 @@ half4 FragReflection(Varyings input)
             if (t > 0.0)
             {
                 float3 planePositionWS = camPos + (viewDir * t);
-				
                 planeUV = -planePositionWS.xz; // Plane UV is inverted from world position
                 planeUV = (planeUV / _PlaneSize) + 0.5;
-
             }
         }
     }
-	
-    float2 waterVelocity = SAMPLE_TEXTURE2D_LOD(_FluidVelocityTex, sampler_FluidVelocityTex, planeUV, 0);
-    
+
+    float2 waterVelocity = SAMPLE_TEXTURE2D_LOD(_FluidVelocityTex, sampler_FluidVelocityTex, planeUV, 0).xy;
     half UVDeformFactor = SAMPLE_TEXTURE2D(_ReflectionNoiseMap, sampler_ReflectionNoiseMap, planeUV * _ReflectionNoiseScale * _PlaneSize).r;
     float2 UVDeform = planeUV + (UVDeformFactor * 0.5) + (_Time.y * _ReflectionTimeFactor * _TimeSpeed) + waterVelocity * _ReflectionVelocityStrength;
-	
     half noiseMask = SAMPLE_TEXTURE2D(_ReflectionNoiseMap, sampler_ReflectionNoiseMap, UVDeform).r;
     float toPlaneDistY = abs(input.positionWS.y - _PlaneHeight);
-	
     half heightMask = EaseInCirc(1 - saturate(toPlaneDistY));
-	
     float reflectionMask = max(heightMask, noiseMask) + saturate(-viewDir.y * 0.0);
     alpha *= reflectionMask;
-	
+
+    // Flatten/fade vers flat color selon la distance (comme dans FragBase)
+    float dist = distance(input.positionWS, _WorldSpaceCameraPos);
+
+    float tFlat = saturate((dist - _FlatStart) / (_FlatEnd - _FlatStart));
+    if (_FlatExpMode > 0.5)
+    {
+        tFlat = 1.0 - exp(-tFlat * 3.0);
+    }
+    float3 color = lerp(_ReflectionColor.rgb * heightMask, _FlatColor.rgb, tFlat);
+
+    // Dithering sur alpha (comme dans FragBase)
+    float ditherDist = saturate((dist - _DitherStart) / (_DitherEnd - _DitherStart));
+    if (ditherDist > 0.0)
+    {
+        static const float bayer[16] = {
+            0.0/16.0,  8.0/16.0,  2.0/16.0, 10.0/16.0,
+           12.0/16.0,  4.0/16.0, 14.0/16.0,  6.0/16.0,
+            3.0/16.0, 11.0/16.0,  1.0/16.0,  9.0/16.0,
+           15.0/16.0,  7.0/16.0, 13.0/16.0,  5.0/16.0
+        };
+        int2 pixelPos = int2(floor(input.positionHCS.xy) % 4);
+        int bayerIdx = pixelPos.x + pixelPos.y * 4;
+        float threshold = bayer[bayerIdx];
+        if (ditherDist > threshold)
+            alpha = 0.0;
+    }
+
     clip(alpha - _Cutoff);
-	
-    return float4(_ReflectionColor.rgb * heightMask, 1);
+    return float4(color, alpha);
 }
 
 #endif // FPRCOMMON_INCLUDE
